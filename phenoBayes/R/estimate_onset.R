@@ -13,10 +13,16 @@ estimate_onset <- function(model, newdata, ref_newdata, n_sims = 1000, sim_mat =
   
   res <- numeric(ncol(sim_mat))
   for(i in seq_len(ncol(sim_mat))) {
-    td <- sim_mat[, i]; rd <- ref_sim_mat[, i]
+    td <- sim_mat[, i]
+    rd <- ref_sim_mat[, i]
+    
+    # Positive means td (shifted) emerged earlier than rd (reference)
     cdiff <- cumsum(td) - cumsum(rd)
     pr <- which.max(rd)
-    res[i] <- max(c(0, cdiff[1:pr]))
+    
+    # Find the day of maximum absolute divergence before the reference peak
+    max_idx <- which.max(abs(cdiff[1:pr]))
+    res[i] <- cdiff[max_idx]
   }
   return(list(Mean = mean(res), Lower_CI = quantile(res, 0.025), Upper_CI = quantile(res, 0.975), Posterior_Draws = res))
 }

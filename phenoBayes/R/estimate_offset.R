@@ -13,10 +13,16 @@ estimate_offset <- function(model, newdata, ref_newdata, n_sims = 1000, sim_mat 
   
   res <- numeric(ncol(sim_mat))
   for(i in seq_len(ncol(sim_mat))) {
-    td <- sim_mat[, i]; rd <- ref_sim_mat[, i]
-    cdiff <- cumsum(td) - cumsum(rd)
+    td <- sim_mat[, i]
+    rd <- ref_sim_mat[, i]
+    
+    # Positive means td (shifted) persisted later than rd (reference)
+    cdiff <- cumsum(rd) - cumsum(td)
     pr <- which.max(rd)
-    res[i] <- max(c(0, -cdiff[pr:365]))
+    
+    # Find the day of maximum absolute divergence after the reference peak
+    max_idx <- pr - 1 + which.max(abs(cdiff[pr:365]))
+    res[i] <- cdiff[max_idx]
   }
   return(list(Mean = mean(res), Lower_CI = quantile(res, 0.025), Upper_CI = quantile(res, 0.975), Posterior_Draws = res))
 }
