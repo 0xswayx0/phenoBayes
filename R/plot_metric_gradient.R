@@ -1,34 +1,37 @@
 #' Plot Metric Gradient
 #' @export
 plot_metric_gradient <- function(model, dataset_for_quantiles, metric = "centroid", 
-                                 x_axis = "latitude", hold_constant = "mean", 
+                                 x_axis = "latitude", temperature_col = "TMAM", hold_constant = "mean", 
                                  n_sims = 1000, add = FALSE, color = "#4575b4") {
                                    
   if (x_axis == "latitude") {
-    x_seq <- seq(min(dataset_for_quantiles$Latitude, na.rm=TRUE), max(dataset_for_quantiles$Latitude, na.rm=TRUE), length.out = 30)
+    x_seq <- seq(min(dataset_for_quantiles[["Latitude"]], na.rm=TRUE), max(dataset_for_quantiles[["Latitude"]], na.rm=TRUE), length.out = 30)
     
     t_val <- if(is.numeric(hold_constant)) hold_constant else {
-      if(hold_constant == "min") quantile(dataset_for_quantiles$TMAM, 0.1, na.rm=TRUE)
-      else if(hold_constant == "max") quantile(dataset_for_quantiles$TMAM, 0.9, na.rm=TRUE)
-      else mean(dataset_for_quantiles$TMAM, na.rm=TRUE)
+      if(hold_constant == "min") quantile(dataset_for_quantiles[[temperature_col]], 0.05, na.rm=TRUE)
+      else if(hold_constant == "max") quantile(dataset_for_quantiles[[temperature_col]], 0.95, na.rm=TRUE)
+      else mean(dataset_for_quantiles[[temperature_col]], na.rm=TRUE)
     }
     nd <- data.frame(Yday = rep(1:365, 30), LogEffort = 0, Latitude = rep(x_seq, each = 365), 
-                     TMAM = t_val, fYear = model$model$fYear[1], SubSite = model$model$SubSite[1])
+                     fYear = model[["model"]][["fYear"]][1], SubSite = model[["model"]][["SubSite"]][1])
+    nd[["EnvDriver"]] <- t_val
                      
   } else {
-    x_seq <- seq(min(dataset_for_quantiles$TMAM, na.rm=TRUE), max(dataset_for_quantiles$TMAM, na.rm=TRUE), length.out = 30)
+    x_seq <- seq(min(dataset_for_quantiles[[temperature_col]], na.rm=TRUE), max(dataset_for_quantiles[[temperature_col]], na.rm=TRUE), length.out = 30)
     
     l_val <- if(is.numeric(hold_constant)) hold_constant else {
-      if(hold_constant == "min") quantile(dataset_for_quantiles$Latitude, 0.1, na.rm=TRUE)
-      else if(hold_constant == "max") quantile(dataset_for_quantiles$Latitude, 0.9, na.rm=TRUE)
-      else mean(dataset_for_quantiles$Latitude, na.rm=TRUE)
+      if(hold_constant == "min") quantile(dataset_for_quantiles[["Latitude"]], 0.05, na.rm=TRUE)
+      else if(hold_constant == "max") quantile(dataset_for_quantiles[["Latitude"]], 0.95, na.rm=TRUE)
+      else mean(dataset_for_quantiles[["Latitude"]], na.rm=TRUE)
     }
     nd <- data.frame(Yday = rep(1:365, 30), LogEffort = 0, Latitude = l_val, 
-                     TMAM = rep(x_seq, each = 365), fYear = model$model$fYear[1], SubSite = model$model$SubSite[1])
+                     fYear = model[["model"]][["fYear"]][1], SubSite = model[["model"]][["SubSite"]][1])
+    nd[["EnvDriver"]] <- rep(x_seq, each = 365)
   }
   
   # Base mean profile for DOBY centering
-  base_nd <- data.frame(Yday=1:365, LogEffort=0, Latitude=mean(dataset_for_quantiles$Latitude, na.rm=TRUE), TMAM=mean(dataset_for_quantiles$TMAM, na.rm=TRUE), fYear=model$model$fYear[1], SubSite=model$model$SubSite[1])
+  base_nd <- data.frame(Yday=1:365, LogEffort=0, Latitude=mean(dataset_for_quantiles[["Latitude"]], na.rm=TRUE), fYear=model[["model"]][["fYear"]][1], SubSite=model[["model"]][["SubSite"]][1])
+  base_nd[["EnvDriver"]] <- mean(dataset_for_quantiles[[temperature_col]], na.rm=TRUE)
   
   set.seed(42)
   beta <- coef(model)
@@ -63,11 +66,11 @@ plot_metric_gradient <- function(model, dataset_for_quantiles, metric = "centroi
         td <- point_sims[, s]
         shifted <- td[order(( (1:365 - D_min) %% 365 ) + 1)]
         doby_c <- sum((1:365)*shifted)
-        res_sims[s] <- (doby_c + D_min - 1) %% 365
+        res_sims[s] <- ( (doby_c + D_min - 2) %% 365 ) + 1
       }
-      metric_res$Mean[i] <- mean(res_sims)
-      metric_res$Lower[i] <- quantile(res_sims, 0.025)
-      metric_res$Upper[i] <- quantile(res_sims, 0.975)
+      metric_res[["Mean"]][i] <- mean(res_sims)
+      metric_res[["Lower"]][i] <- quantile(res_sims, 0.025)
+      metric_res[["Upper"]][i] <- quantile(res_sims, 0.975)
     }
   }
   

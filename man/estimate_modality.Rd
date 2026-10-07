@@ -9,7 +9,8 @@ estimate_modality(
   newdata,
   n_sims = 1000,
   sim_mat = NULL,
-  rel_prominence = 0.25
+  rel_prominence = 0.5,
+  abs_threshold = 0.25
 )
 }
 \arguments{
@@ -21,7 +22,9 @@ estimate_modality(
 
 \item{sim_mat}{Optional pre-computed simulation matrix}
 
-\item{rel_prominence}{Relative prominence threshold for valid peaks (default 0.25)}
+\item{rel_prominence}{Relative prominence threshold for valid peaks (default 0.50)}
+
+\item{abs_threshold}{Absolute height threshold relative to the global peak (default 0.25)}
 }
 \description{
 Estimate Phenological Modality (Number of Peaks)

@@ -4,14 +4,20 @@
 #' @param newdata A data.frame with prediction grid (365 days)
 #' @param n_sims Integer, number of posterior draws
 #' @param sim_mat Optional pre-computed simulation matrix
-#' @param rel_prominence Relative prominence threshold for valid peaks (default 0.25)
+#' @param rel_prominence Relative prominence threshold for valid peaks (default 0.50)
+#' @param abs_threshold Absolute height threshold relative to the global peak (default 0.25)
 #' @export
-estimate_modality <- function(model, newdata, n_sims = 1000, sim_mat = NULL, rel_prominence = 0.25) {
+estimate_modality <- function(model, newdata, n_sims = 1000, sim_mat = NULL, rel_prominence = 0.50, abs_threshold = 0.25) {
   if (is.null(sim_mat)) sim_mat <- simulate_posterior_density(model, newdata, n_sims)
   
   count_peaks <- function(dens) {
     diffs <- diff(dens); signs <- sign(diffs); signs[signs == 0] <- -1
     peaks <- which(diff(signs) == -2) + 1
+    
+    # Absolute height filter: must be >= abs_threshold * global_max
+    global_max <- max(dens)
+    peaks <- peaks[dens[peaks] >= (abs_threshold * global_max)]
+    
     if (length(peaks) <= 1) return(max(1, length(peaks)))
     valid_peaks <- peaks[1]
     for (i in 2:length(peaks)) {

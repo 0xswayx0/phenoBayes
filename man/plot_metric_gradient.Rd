@@ -9,6 +9,7 @@ plot_metric_gradient(
   dataset_for_quantiles,
   metric = "centroid",
   x_axis = "latitude",
+  temperature_col = "TMAM",
   hold_constant = "mean",
   n_sims = 1000,
   add = FALSE,

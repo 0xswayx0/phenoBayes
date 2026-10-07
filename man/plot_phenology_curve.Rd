@@ -9,6 +9,7 @@ plot_phenology_curve(
   dataset_for_quantiles,
   latitude = "mean",
   temperature = "mean",
+  temperature_col = "TMAM",
   n_sims = 1000,
   log = TRUE,
   add = FALSE,

@@ -28,7 +28,7 @@ estimate_centroid <- function(model, newdata, n_sims = 1000, sim_mat = NULL) {
     td <- sim_mat[, i]
     shifted <- td[order(( (1:365 - D_min) %% 365 ) + 1)]
     doby_c <- sum((1:365) * shifted)
-    res[i] <- (doby_c + D_min - 1) %% 365
+    res[i] <- ( (doby_c + D_min - 2) %% 365 ) + 1
   }
   
   return(list(

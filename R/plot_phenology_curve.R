@@ -1,22 +1,23 @@
 #' Plot Phenology Curve
 #' @export
 plot_phenology_curve <- function(model, dataset_for_quantiles, latitude = "mean", temperature = "mean", 
-                                 n_sims = 1000, log = TRUE, add = FALSE, color = "#d73027") {
+                                 temperature_col = "TMAM", n_sims = 1000, log = TRUE, add = FALSE, color = "#d73027") {
   
   lat_val <- if(is.numeric(latitude)) latitude else {
-    if(latitude == "min") quantile(dataset_for_quantiles$Latitude, 0.1, na.rm=TRUE)
-    else if(latitude == "max") quantile(dataset_for_quantiles$Latitude, 0.9, na.rm=TRUE)
-    else mean(dataset_for_quantiles$Latitude, na.rm=TRUE)
+    if(latitude == "min") quantile(dataset_for_quantiles[["Latitude"]], 0.05, na.rm=TRUE)
+    else if(latitude == "max") quantile(dataset_for_quantiles[["Latitude"]], 0.95, na.rm=TRUE)
+    else mean(dataset_for_quantiles[["Latitude"]], na.rm=TRUE)
   }
   
   temp_val <- if(is.numeric(temperature)) temperature else {
-    if(temperature == "min") quantile(dataset_for_quantiles$TMAM, 0.1, na.rm=TRUE)
-    else if(temperature == "max") quantile(dataset_for_quantiles$TMAM, 0.9, na.rm=TRUE)
-    else mean(dataset_for_quantiles$TMAM, na.rm=TRUE)
+    if(temperature == "min") quantile(dataset_for_quantiles[[temperature_col]], 0.05, na.rm=TRUE)
+    else if(temperature == "max") quantile(dataset_for_quantiles[[temperature_col]], 0.95, na.rm=TRUE)
+    else mean(dataset_for_quantiles[[temperature_col]], na.rm=TRUE)
   }
   
-  nd <- data.frame(Yday = 1:365, LogEffort = 0, Latitude = lat_val, TMAM = temp_val, 
-                   fYear = model$model$fYear[1], SubSite = model$model$SubSite[1])
+  nd <- data.frame(Yday = 1:365, LogEffort = 0, Latitude = lat_val, 
+                   fYear = model[["model"]][["fYear"]][1], SubSite = model[["model"]][["SubSite"]][1])
+  nd[["EnvDriver"]] <- temp_val
                    
   sim_mat <- simulate_posterior_density(model, nd, n_sims)
   
@@ -28,9 +29,9 @@ plot_phenology_curve <- function(model, dataset_for_quantiles, latitude = "mean"
   )
   
   if(log) {
-    df_plot$Density <- df_plot$Density + 1e-5
-    df_plot$Lower <- df_plot$Lower + 1e-5
-    df_plot$Upper <- df_plot$Upper + 1e-5
+    df_plot[["Density"]] <- df_plot[["Density"]] + 1e-5
+    df_plot[["Lower"]] <- pmax(df_plot[["Lower"]], 0) + 1e-5
+    df_plot[["Upper"]] <- df_plot[["Upper"]] + 1e-5
   }
   
   layer_ribbon <- ggplot2::geom_ribbon(data = df_plot, ggplot2::aes(x = Yday, ymin = Lower, ymax = Upper), fill = color, alpha = 0.2, inherit.aes = FALSE)
